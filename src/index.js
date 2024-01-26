@@ -9,6 +9,8 @@
 import { createFilter } from '@rollup/pluginutils';
 import { transformWithEsbuild } from 'vite';
 import loadShader from './loadShader.js';
+import fs from 'fs/promises'
+import {makeShaderDataDefinitions} from 'webgpu-utils'
 
 /**
  * @const
@@ -25,9 +27,7 @@ const DEFAULT_EXTENSION = 'glsl';
  * @type {readonly RegExp[]}
  */
 const DEFAULT_SHADERS = Object.freeze([
-  '**/*.glsl', '**/*.wgsl',
-  '**/*.vert', '**/*.frag',
-  '**/*.vs', '**/*.fs'
+  '**/*.wgsl',
 ]);
 
 /**
@@ -71,7 +71,11 @@ export default function ({
 
     async transform (source, shader) {
       if (!filter(shader)) return;
-
+      globalThis.GPUShaderStage = {
+        VERTEX: 1,
+        FRAGMENT: 2,
+        COMPUTE: 4,
+      }
       const { dependentChunks, outputShader } = loadShader(source, shader, {
         warnDuplicatedImports,
         defaultExtension,
@@ -99,12 +103,15 @@ export default function ({
           );
         }
       }
-
-      return await transformWithEsbuild(outputShader, shader, {
+      
+      const result = await transformWithEsbuild(outputShader, shader, {
         sourcemap: config.build.sourcemap && 'external',
         loader: 'text', format: 'esm',
         minifyWhitespace: prod
       });
+      const definitions = makeShaderDataDefinitions(result.map.sourcesContent[0].replace(/(^|\s)override/g,'const'));
+      await fs.writeFile('./test.txt', JSON.stringify({code:result.map.sourcesContent[0],definitions},null,2));
+      return {code:`export const code = \`${result.map.sourcesContent[0]}\`;\n\nexport const defintions = \`${JSON.stringify(definitions)}\`;\n\nexport default code`,map:null};
     }
   };
 }

@@ -1,6 +1,7 @@
 import type { PluginOptions } from './types.d';
 import type { Plugin } from 'vite';
 
+
 /**
  * @function
  * @name glsl
