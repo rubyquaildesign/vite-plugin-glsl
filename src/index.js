@@ -111,7 +111,10 @@ export default function ({
       });
       const definitions = makeShaderDataDefinitions(result.map.sourcesContent[0].replace(/(^|\s)override/g,'const'));
       await fs.writeFile('./test.txt', JSON.stringify({code:result.map.sourcesContent[0],definitions},null,2));
-      return {code:`export const code = \`${result.map.sourcesContent[0]}\`;\n\nexport const defintions = \`${JSON.stringify(definitions)}\`;\n\nexport default code`,map:null};
+      return {
+        code: `export const code = \`${result.map.sourcesContent[0]}\`;\n\nexport const definitions = \`${JSON.stringify(definitions)}\`;\n\nexport default code`, map: null, data: {
+        code:result.map.sourcesContent[0],definitions
+      }};
     }
   };
 }
