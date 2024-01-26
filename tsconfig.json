@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleDetection": "force",
+    "moduleResolution": "Bundler",
+    "sourceMap": true,
+    "esModuleInterop": false,
+    "forceConsistentCasingInFileNames": true,
+    "verbatimModuleSyntax": true,
+    "strict": true,
+    "declaration": true,
+    "skipLibCheck": true,
+    "declarationDir": "output"
+  },
+  "include": [
+    "src/**.ts",
+    "./tsup.config.ts"
+, "src/index.ts"  ]
+}

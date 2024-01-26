@@ -5,13 +5,11 @@
  * @version 1.2.1
  * @license MIT
  */
-
-import { createFilter } from '@rollup/pluginutils';
-import { transformWithEsbuild } from 'vite';
+import type { PluginOptions } from './types.d';
+import type { Plugin, ViteDevServer } from 'vite';
 import loadShader from './loadShader.js';
-import fs from 'fs/promises'
-import {makeShaderDataDefinitions} from 'webgpu-utils'
-
+import * as  msd from 'webgpu-utils';
+import { createFilter } from '@rollup/pluginutils';
 /**
  * @const
  * @default
@@ -28,7 +26,7 @@ const DEFAULT_EXTENSION = 'glsl';
  */
 const DEFAULT_SHADERS = Object.freeze([
   '**/*.wgsl',
-]);
+]) as string[];
 
 /**
  * @function
@@ -51,13 +49,13 @@ export default function ({
     compress = false,
     watch = true,
     root = '/'
-  } = {}
-) {
-  let server = undefined, config = undefined;
-  const filter = createFilter(include, exclude);
+  }: PluginOptions = {}
+): Plugin {
+  let server: ViteDevServer | undefined = undefined, config = undefined;
   const prod = process.env.NODE_ENV === 'production';
-
-  return {
+  const filter = createFilter(include, exclude);
+  
+  return ({
     enforce: 'pre',
     name: 'vite-plugin-glsl',
 
@@ -69,9 +67,9 @@ export default function ({
       config = resolvedConfig;
     },
 
-    async transform (source, shader) {
+    transform(source, shader) {
       if (!filter(shader)) return;
-      globalThis.GPUShaderStage = {
+      (globalThis as any).GPUShaderStage = {
         VERTEX: 1,
         FRAGMENT: 2,
         COMPUTE: 4,
@@ -81,7 +79,7 @@ export default function ({
         defaultExtension,
         compress,
         root
-      });
+      } as any);
 
       const { moduleGraph } = server ?? {};
       const module = moduleGraph?.getModuleById(shader);
@@ -94,27 +92,21 @@ export default function ({
           const imported = new Set();
 
           chunks.forEach(chunk => imported.add(
-            moduleGraph.createFileOnlyEntry(chunk)
+            moduleGraph!.createFileOnlyEntry(chunk)
           ));
 
-          moduleGraph.updateModuleInfo(
-            module, imported, null,
+          moduleGraph!.updateModuleInfo(
+            module, imported as any, null,
             new Set(), null, true
           );
         }
       }
-      
-      const result = await transformWithEsbuild(outputShader, shader, {
-        sourcemap: config.build.sourcemap && 'external',
-        loader: 'text', format: 'esm',
-        minifyWhitespace: prod
-      });
-      const definitions = makeShaderDataDefinitions(result.map.sourcesContent[0].replace(/(^|\s)override/g,'const'));
-      await fs.writeFile('./test.txt', JSON.stringify({code:result.map.sourcesContent[0],definitions},null,2));
+      const makeShaderDataDefinitions = msd.makeShaderDataDefinitions;
+      const definitions = makeShaderDataDefinitions(outputShader.replace(/(^|\s)override/g,'const'));
       return {
-        code: `export const code = \`${result.map.sourcesContent[0]}\`;\n\nexport const definitions = \`${JSON.stringify(definitions)}\`;\n\nexport default code`, map: null, data: {
-        code:result.map.sourcesContent[0],definitions
+        code: `export const code = \`${outputShader}\`;\n\nexport const definitions = \`${JSON.stringify(definitions)}\`;\n\nexport default code`, map: null, data: {
+        code:outputShader,definitions
       }};
     }
-  };
+  });
 }

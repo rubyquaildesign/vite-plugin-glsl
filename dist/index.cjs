@@ -186,7 +186,7 @@ function loadShader_default(source, shader, options) {
 
 // src/index.js
 var import_promises = __toESM(require("fs/promises"), 1);
-var import_webgpu_utils = require("webgpu-utils");
+var msd = import("webgpu-utils");
 var DEFAULT_EXTENSION = "glsl";
 var DEFAULT_SHADERS = Object.freeze([
   "**/*.wgsl"
@@ -247,13 +247,14 @@ function src_default({
           );
         }
       }
+      const makeShaderDataDefinitions = (await msd).makeShaderDataDefinitions;
       const result = await (0, import_vite.transformWithEsbuild)(outputShader, shader, {
         sourcemap: config.build.sourcemap && "external",
         loader: "text",
         format: "esm",
         minifyWhitespace: prod
       });
-      const definitions = (0, import_webgpu_utils.makeShaderDataDefinitions)(result.map.sourcesContent[0].replace(/(^|\s)override/g, "const"));
+      const definitions = makeShaderDataDefinitions(result.map.sourcesContent[0].replace(/(^|\s)override/g, "const"));
       await import_promises.default.writeFile("./test.txt", JSON.stringify({ code: result.map.sourcesContent[0], definitions }, null, 2));
       return {
         code: `export const code = \`${result.map.sourcesContent[0]}\`;
