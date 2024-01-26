@@ -1,5 +1,5 @@
 {
-  "name": "vite-plugin-glsl",
+  "name": "@rupertofly/vite-plugin-glsl",
   "description": "Import, inline (and compress) GLSL shader files",
   "homepage": "https://github.com/UstymUkhman/vite-plugin-glsl#readme",
   "packageManager": "^npm@9.8.0",
